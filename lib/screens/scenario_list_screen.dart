@@ -181,22 +181,28 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
+    // Example version, replace with your actual version logic if needed
+    const appVersion = '7.0.0 (1)';
+    final accentColor = Colors.red.shade700;
     return Scaffold(
+      backgroundColor: Colors.white, // Set main page body to white
       appBar: AppBar(
-        title: Text(loc.get('scenario_list')),
+        backgroundColor: accentColor,
+        elevation: 0,
+        title: const Text('Lernit – scénarios',
+            style: TextStyle(color: Colors.white)),
         actions: [
-          if (_isSignedIn && _driveFolderId != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadScenarios,
-              tooltip: 'Refresh',
-            ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadScenarios,
+            tooltip: 'Refresh',
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () async {
               await Navigator.pushNamed(context, '/settings');
               await _loadTrainerMode();
-              _checkDriveStatus();
+              await _checkDriveStatus(); // Ensure folderId and scenarios are refreshed after settings
             },
             tooltip: loc.get('settings'),
           ),
@@ -214,6 +220,7 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                       const Text(
                         'Google Drive is not connected or no folder is selected.',
                         textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.black54),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -226,200 +233,115 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                   ),
                 )
               : _error != null
-                  ? Center(child: Text(_error!))
+                  ? Center(
+                      child: Text(_error!,
+                          style: const TextStyle(color: Colors.white)))
                   : _scenarios.isEmpty
-                      ? Center(child: Text(loc.get('no_scenarios')))
-                      : Column(
+                      ? Center(
+                          child: Text(loc.get('no_scenarios'),
+                              style: const TextStyle(color: Colors.white)))
+                      : Stack(
                           children: [
-                            if (_fromCache)
-                              Container(
-                                color: Colors.amber.shade100,
-                                padding: const EdgeInsets.all(8),
-                                child: const Text(
-                                    'Affichage du cache local (hors ligne ou contenu non synchronisé).'),
-                              ),
-                            Expanded(
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 64),
                               child: ListView.builder(
+                                padding: const EdgeInsets.all(16),
                                 itemCount: _scenarios.length,
                                 itemBuilder: (context, index) {
                                   final scenario = _scenarios[index];
-                                  return ListTile(
-                                    title: Text(scenario.title),
-                                    subtitle:
-                                        Text('Lang: ${scenario.language}'),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ScenarioViewScreen(
-                                                  scenario: scenario),
-                                        ),
-                                      );
-                                    },
-                                    trailing: _isTrainer
-                                        ? Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              IconButton(
-                                                icon: const Icon(Icons.edit,
-                                                    color: Colors.blue),
-                                                tooltip: 'Edit',
-                                                onPressed: () async {
-                                                  final updatedScenario =
-                                                      await Navigator.push<
-                                                          Scenario>(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          ScenarioEditScreen(
-                                                        onSave: (scenario) {
-                                                          Navigator.pop(context,
-                                                              scenario);
-                                                        },
-                                                        initialScenario:
-                                                            scenario,
-                                                      ),
-                                                    ),
-                                                  );
-                                                  if (updatedScenario != null) {
-                                                    setState(() {
-                                                      _isLoading = true;
-                                                    });
-                                                    try {
-                                                      await DriveService()
-                                                          .uploadScenario(
-                                                              updatedScenario);
-                                                      await _loadScenarios(
-                                                          refreshCache: true);
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        const SnackBar(
-                                                            content: Text(
-                                                                'Scenario updated.')),
-                                                      );
-                                                    } catch (e) {
-                                                      setState(() =>
-                                                          _isLoading = false);
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Failed to update scenario: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                },
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    elevation: 4,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ScenarioViewScreen(
+                                                    scenario: scenario),
+                                          ),
+                                        );
+                                      },
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (scenario.image != null &&
+                                              scenario.image!.isNotEmpty)
+                                            ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.vertical(
+                                                      top: Radius.circular(16)),
+                                              child: Image.network(
+                                                scenario.image!,
+                                                height: 140,
+                                                width: double.infinity,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (c, e, s) =>
+                                                    Container(
+                                                  height: 140,
+                                                  color: Colors.grey.shade200,
+                                                  child: const Icon(
+                                                      Icons.broken_image,
+                                                      size: 48),
+                                                ),
                                               ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete,
-                                                    color: Colors.red),
-                                                tooltip: 'Delete',
-                                                onPressed: () async {
-                                                  final confirm =
-                                                      await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        AlertDialog(
-                                                      title: const Text(
-                                                          'Delete Scenario'),
-                                                      content: Text(
-                                                          'Are you sure you want to delete "${scenario.title}"? This cannot be undone.'),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                  context,
-                                                                  false),
-                                                          child: const Text(
-                                                              'Cancel'),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                  context,
-                                                                  true),
-                                                          child: const Text(
-                                                              'Delete',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .red)),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-                                                  if (confirm == true) {
-                                                    setState(() =>
-                                                        _isLoading = true);
-                                                    try {
-                                                      // Find the Drive file by name
-                                                      final driveService =
-                                                          DriveService();
-                                                      final files =
-                                                          await driveService
-                                                              .listScenarioFiles();
-                                                      final file =
-                                                          files.firstWhere(
-                                                        (f) =>
-                                                            f.name?.startsWith(
-                                                                scenario.title
-                                                                    .replaceAll(
-                                                                        RegExp(
-                                                                            r'[^a-zA-Z0-9_-]'),
-                                                                        '_')) ??
-                                                            false,
-                                                        orElse: () =>
-                                                            throw Exception(
-                                                                'File not found on Drive'),
-                                                      );
-                                                      await driveService
-                                                          .deleteFileById(
-                                                              file.id!);
-                                                      await _loadScenarios(
-                                                          refreshCache: true);
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        const SnackBar(
-                                                            content: Text(
-                                                                'Scenario deleted.')),
-                                                      );
-                                                    } catch (e) {
-                                                      setState(() =>
-                                                          _isLoading = false);
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                'Failed to delete scenario: $e')),
-                                                      );
-                                                    }
-                                                  }
-                                                },
+                                            )
+                                          else
+                                            Container(
+                                              height: 140,
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade200,
+                                                borderRadius: const BorderRadius
+                                                    .vertical(
+                                                    top: Radius.circular(16)),
                                               ),
-                                              IconButton(
-                                                icon: const Icon(Icons.copy,
-                                                    color: Colors.green),
-                                                tooltip:
-                                                    'Duplicate & Translate',
-                                                onPressed: () =>
-                                                    _duplicateAndTranslateScenario(
-                                                        scenario),
-                                              ),
-                                            ],
-                                          )
-                                        : null,
+                                              child: const Icon(Icons.image,
+                                                  size: 48, color: Colors.grey),
+                                            ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Text(
+                                              scenario.title,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   );
                                 },
+                              ),
+                            ),
+                            // Version label
+                            Positioned(
+                              left: 16,
+                              bottom: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.85),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text('v$appVersion',
+                                    style: const TextStyle(
+                                        fontSize: 12, color: Colors.black87)),
                               ),
                             ),
                           ],
                         ),
       floatingActionButton: _isTrainer
           ? FloatingActionButton(
+              backgroundColor: accentColor,
               onPressed: () async {
                 final newScenario = await Navigator.push<Scenario>(
                   context,
@@ -429,7 +351,6 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                 );
                 if (newScenario != null) {
                   final loc = AppLocalizations.of(context)!;
-                  print('Showing saving dialog...');
                   showDialog(
                     context: context,
                     barrierDismissible: false,
@@ -455,13 +376,8 @@ class _ScenarioListScreenState extends State<ScenarioListScreen> {
                       SnackBar(content: Text('Failed to save scenario: $e')),
                     );
                   } finally {
-                    print('Attempting to dismiss dialog...');
                     if (mounted) {
-                      print('Widget is mounted, dismissing dialog...');
                       Navigator.of(context, rootNavigator: true).pop();
-                      print('Dialog dismissed.');
-                    } else {
-                      print('Widget is NOT mounted, cannot dismiss dialog.');
                     }
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

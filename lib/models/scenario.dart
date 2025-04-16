@@ -38,4 +38,22 @@ class Scenario {
         'scenes': scenes.map((e) => e.toJson()).toList(),
         if (lastUpdated != null) 'lastUpdated': lastUpdated!.toIso8601String(),
       };
+
+  Scenario copyWith({
+    String? title,
+    String? language,
+    String? description,
+    String? image,
+    List<Scene>? scenes,
+    DateTime? lastUpdated,
+  }) {
+    return Scenario(
+      title: title ?? this.title,
+      language: language ?? this.language,
+      description: description ?? this.description,
+      image: image ?? this.image,
+      scenes: scenes ?? this.scenes,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
 }

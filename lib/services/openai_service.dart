@@ -6,6 +6,31 @@ class OpenAIService {
   static const _apiUrl = 'https://api.openai.com/v1/chat/completions';
   final _storage = const FlutterSecureStorage();
 
+  final String aiScenarioJsonFormat = '''
+{
+  "title": "string (non-empty)",
+  "language": "fr",
+  "description": "string (non-empty)",
+  "image": "https://images.pexels.com/photos/276267/pexels-photo-276267.jpeg",
+  "scenes": [
+    {
+      "title": "string (non-empty)",
+      "description": "string (non-empty)",
+      "image": "https://images.pexels.com/photos/276267/pexels-photo-276267.jpeg",
+      "problems": [
+        {
+          "title": "string (non-empty)",
+          "description": "string (non-empty)",
+          "resolution": "string (non-empty)",
+          "image": "https://images.pexels.com/photos/276267/pexels-photo-276267.jpeg"
+        }
+      ]
+    }
+  ],
+  "lastUpdated": "ISODateTime"
+}
+''';
+
   Future<String?> getApiKey() async {
     return await _storage.read(key: 'openai_api_key');
   }
@@ -28,7 +53,7 @@ class OpenAIService {
         {
           'role': 'system',
           'content':
-              'You are an expert instructional designer. When given a prompt, always generate a JSON object for a scenario with this structure:\n{\n  "title": "string (non-empty)",\n  "description": "string (non-empty)",\n  "scenes": [\n    {\n      "title": "string (non-empty)",\n      "description": "string (non-empty)",\n      "problems": [\n        {\n          "title": "string (non-empty)",\n          "description": "string (non-empty)",\n          "resolution": "string (non-empty)"\n        }\n      ]\n    }\n  ]\n}\nEach field must be non-empty. Output only valid JSON for a scenario as described.'
+              'You are an expert instructional designer. When given a prompt, always generate a JSON object for a scenario with this structure:\n$aiScenarioJsonFormat\nEach field must be non-empty. Output only valid JSON for a scenario as described.'
         },
         {'role': 'user', 'content': prompt}
       ],
